@@ -1,0 +1,94 @@
+{
+    "id": "828eaedc-6bb3-4fda-aada-8c26d05436a4",
+    "name": "ConsultaCEPBrasil",
+    "description": {
+        "short": "Consulta CEP via ViaCEP e preenche logradouro automaticamente.",
+        "long": "Extension App de Connected Fields para eSignature/Web Forms. Ao informar o CEP, consulta o ViaCEP e retorna o logradouro via suggestions."
+    },
+    "termsOfServiceUrl": "https://www.samplecompany.com/tos",
+    "privacyUrl": "https://www.samplecompany.com/privacy-security",
+    "supportUrl": "https://www.samplecompany.com/support",
+    "publisher": {
+        "name": "Triscal",
+        "email": "fcardozo@triscal.com.br"
+    },
+    "connections": [
+        {
+            "id": "2349a558-6f96-4b4a-91ab-8026b531096b",
+            "name": "authentication",
+            "description": "Fake OAuth (client_credentials) para Connected Fields via Google Apps Script",
+            "type": "oauth2",
+            "params": {
+                "provider": "CUSTOM",
+                "clientId": "sKY8MFMcR41",
+                "clientSecret": "********",
+                "scopes": [],
+                "grantType": "client_credentials",
+                "customConfig": {
+                    "authorizationMethod": "header",
+                    "authorizationParams": {},
+                    "requiredScopes": [],
+                    "scopeSeparator": " ",
+                    "tokenUrl": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=oauth/token",
+                    "refreshScopes": []
+                }
+            }
+        }
+    ],
+    "icon": {
+        "data": "[omitted]",
+        "mediaType": "image/png",
+        "id": "4d477b17-893f-46dd-8e38-b3ef5f9eeb61"
+    },
+    "screenshots": [],
+    "extensions": [
+        {
+            "name": "Consulta CEP - Connected Fields",
+            "description": "Verifica CEP e preenche logradouro (ViaCEP).",
+            "template": "ConnectedFields.Version1.ConnectedFields",
+            "actionReferences": [
+                "My Verify Action",
+                "My GetTypeNames Action",
+                "My GetTypeDefinitions Action"
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "My Verify Action",
+            "description": "Verify CEP e retorna suggestions com logradouro.",
+            "template": "ConnectedFields.Version1.Verify",
+            "connectionsReference": "authentication",
+            "relation": "6f174b64-fd6e-4a17-bf10-21c401aac21f",
+            "params": {
+                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/verify"
+            }
+        },
+        {
+            "name": "My GetTypeNames Action",
+            "description": "Lista os typeNames suportados (ConsultaCEP).",
+            "template": "DataIO.Version6.GetTypeNames",
+            "connectionsReference": "authentication",
+            "relation": "0689b674-2ce7-4a9d-8121-f67c7d45b5f0",
+            "params": {
+                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/getTypeNames"
+            }
+        },
+        {
+            "name": "My GetTypeDefinitions Action",
+            "description": "Retorna o typeDefinition do ConsultaCEP (cep requiredForVerifyingType, logradouro autofill).",
+            "template": "DataIO.Version6.GetTypeDefinitions",
+            "connectionsReference": "authentication",
+            "relation": "ab6c71e3-57b6-4629-b568-d3da69a7d54b",
+            "params": {
+                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/getTypeDefinitions"
+            }
+        }
+    ],
+    "signupUrl": "https://www.samplecompany.com/signup",
+    "changelog": "",
+    "publicationRegions": [
+        "US"
+    ],
+    "distribution": "PRIVATE"
+}
