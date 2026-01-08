@@ -107,7 +107,7 @@ async function verifyCEP(req, res) {
   }
 
   const cepFormatado = `${cepDigits.substring(0, 5)}-${cepDigits.substring(5)}`;
-  const url = `https://viacep.com.br/ws/${cepFormatado}/json/`;
+  const url = `http://viacep.com.br/ws/${cepFormatado}/json/`;
 
   try {
     const resp = await fetch(url, {
