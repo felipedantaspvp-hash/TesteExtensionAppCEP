@@ -21,7 +21,7 @@ app.post("/", async (req, res) => {
       case "getTypeNames":
         return getTypeNames(res);
       case "getTypeDefinitions":
-        return getTypeDefinitions(res);
+        return getTypeDefinitions(req, res);
       case "verify":
         return await verifyCEP(req, res);
       default:
@@ -76,28 +76,43 @@ function getTypeNames(res) {
 }
 
 
-function getTypeDefinitions(res) {
-  return res.status(200).json({
-    typeDefinitions: [
-      {
-        typeName: "ConsultaCEP",
-        displayName: "Consulta CEP",
-        description: "Consulta CEP via ViaCEP e preenche logradouro",
-        properties: {
-          cep: {
-            type: "string",
-            displayName: "CEP",
-            requiredForVerifyingType: true
-          },
-          logradouro: {
-            type: "string",
-            displayName: "Logradouro"
-          }
+function getTypeDefinitions(req, res) {
+  const body = req.body || {};
+  const typeNames = Array.isArray(body.typeNames) ? body.typeNames : [];
+
+  // você pode filtrar por typeNames se quiser, aqui vamos retornar só ConsultaCEP
+  const declarations = [
+    {
+      typeName: "ConsultaCEP",
+      displayName: "Consulta CEP",
+      description: "Consulta CEP via ViaCEP e preenche logradouro",
+      properties: [
+        {
+          name: "cep",
+          displayName: "CEP",
+          description: "CEP (8 dígitos)",
+          type: "string",
+          requiredForVerifyingType: true
+        },
+        {
+          name: "logradouro",
+          displayName: "Logradouro",
+          description: "Logradouro retornado pelo ViaCEP",
+          type: "string"
         }
-      }
-    ]
-  });
+      ]
+    }
+  ];
+
+  // se quiser respeitar o filtro:
+  const filtered =
+    typeNames.length > 0
+      ? declarations.filter(d => typeNames.includes(d.typeName))
+      : declarations;
+
+  return res.status(200).json({ declarations: filtered });
 }
+
 
 
 async function verifyCEP(req, res) {
