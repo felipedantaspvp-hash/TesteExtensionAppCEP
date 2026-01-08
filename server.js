@@ -77,40 +77,31 @@ function getTypeNames(res) {
 
 
 function getTypeDefinitions(req, res) {
-  const body = req.body || {};
-  const typeNames = Array.isArray(body.typeNames) ? body.typeNames : [];
-
-  // você pode filtrar por typeNames se quiser, aqui vamos retornar só ConsultaCEP
   const declarations = [
     {
-      typeName: "ConsultaCEP",
+      declarationType: "map",
+      name: "ConsultaCEP",
       displayName: "Consulta CEP",
       description: "Consulta CEP via ViaCEP e preenche logradouro",
-      properties: [
+      fields: [
         {
           name: "cep",
           displayName: "CEP",
           description: "CEP (8 dígitos)",
-          type: "string",
+          type: { type: "string" },
           requiredForVerifyingType: true
         },
         {
           name: "logradouro",
           displayName: "Logradouro",
           description: "Logradouro retornado pelo ViaCEP",
-          type: "string"
+          type: { type: "string" }
         }
       ]
     }
   ];
 
-  // se quiser respeitar o filtro:
-  const filtered =
-    typeNames.length > 0
-      ? declarations.filter(d => typeNames.includes(d.typeName))
-      : declarations;
-
-  return res.status(200).json({ declarations: filtered });
+  return res.status(200).json({ declarations });
 }
 
 
