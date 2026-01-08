@@ -68,7 +68,7 @@ function getTypeNames(res) {
     typeNames: [
       {
         typeName: "ConsultaCEP",
-        displayName: "Consulta CEP",
+        label: "Consulta CEP",
         description: "Consulta CEP via ViaCEP e preenche logradouro"
       }
     ]
