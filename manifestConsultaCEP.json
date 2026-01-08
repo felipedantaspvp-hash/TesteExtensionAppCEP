@@ -1,9 +1,9 @@
 {
-    "id": "828eaedc-6bb3-4fda-aada-8c26d05436a4",
-    "name": "ConsultaCEPBrasil",
+    "id": "8425162a-bb4c-4171-b0b3-0dbb8a0ce3a1",
+    "name": "ConsultaCEPBrasilv2",
     "description": {
-        "short": "Consulta CEP via ViaCEP e preenche logradouro automaticamente.",
-        "long": "Extension App de Connected Fields para eSignature/Web Forms. Ao informar o CEP, consulta o ViaCEP e retorna o logradouro via suggestions."
+        "short": "Consulta CEP via ViaCEP e retorna logradouro.",
+        "long": "Connected Fields Extension App para eSignature/Web Forms. Recebe CEP e sugere o logradouro usando ViaCEP."
     },
     "termsOfServiceUrl": "https://www.samplecompany.com/tos",
     "privacyUrl": "https://www.samplecompany.com/privacy-security",
@@ -14,14 +14,14 @@
     },
     "connections": [
         {
-            "id": "2349a558-6f96-4b4a-91ab-8026b531096b",
-            "name": "authentication",
-            "description": "Fake OAuth (client_credentials) para Connected Fields via Google Apps Script",
+            "id": "6005baeb-c987-4c4a-9b16-53347f68cc8a",
+            "name": "authentication_cc",
+            "description": "Fake OAuth client_credentials para Connected Fields via NodeJS (Vercel)",
             "type": "oauth2",
             "params": {
                 "provider": "CUSTOM",
-                "clientId": "sKY8MFMcR41",
-                "clientSecret": "********",
+                "clientId": "cep-client",
+                "clientSecret": "[omitted]",
                 "scopes": [],
                 "grantType": "client_credentials",
                 "customConfig": {
@@ -29,8 +29,7 @@
                     "authorizationParams": {},
                     "requiredScopes": [],
                     "scopeSeparator": " ",
-                    "tokenUrl": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=oauth/token",
-                    "refreshScopes": []
+                    "tokenUrl": "https://testeextensionappcep.vercel.app/?action=oauthToken"
                 }
             }
         }
@@ -38,50 +37,50 @@
     "icon": {
         "data": "[omitted]",
         "mediaType": "image/png",
-        "id": "4d477b17-893f-46dd-8e38-b3ef5f9eeb61"
+        "id": "92fc233f-f67d-408a-8a14-987d59e54a12"
     },
     "screenshots": [],
     "extensions": [
         {
             "name": "Consulta CEP - Connected Fields",
-            "description": "Verifica CEP e preenche logradouro (ViaCEP).",
+            "description": "Verifica CEP e preenche logradouro via suggestions.",
             "template": "ConnectedFields.Version1.ConnectedFields",
             "actionReferences": [
-                "My Verify Action",
-                "My GetTypeNames Action",
-                "My GetTypeDefinitions Action"
+                "Verify",
+                "GetTypeDefinitions",
+                "GetTypeNames"
             ]
         }
     ],
     "actions": [
         {
-            "name": "My Verify Action",
-            "description": "Verify CEP e retorna suggestions com logradouro.",
+            "name": "Verify",
+            "description": "Verifica CEP e retorna sugestão de logradouro.",
             "template": "ConnectedFields.Version1.Verify",
-            "connectionsReference": "authentication",
-            "relation": "6f174b64-fd6e-4a17-bf10-21c401aac21f",
+            "connectionsReference": "authentication_cc",
+            "relation": "4665c327-572e-43e3-81fd-f75d59515f46",
             "params": {
-                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/verify"
+                "uri": "https://testeextensionappcep.vercel.app/?action=verify"
             }
         },
         {
-            "name": "My GetTypeNames Action",
-            "description": "Lista os typeNames suportados (ConsultaCEP).",
-            "template": "DataIO.Version6.GetTypeNames",
-            "connectionsReference": "authentication",
-            "relation": "0689b674-2ce7-4a9d-8121-f67c7d45b5f0",
-            "params": {
-                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/getTypeNames"
-            }
-        },
-        {
-            "name": "My GetTypeDefinitions Action",
-            "description": "Retorna o typeDefinition do ConsultaCEP (cep requiredForVerifyingType, logradouro autofill).",
+            "name": "GetTypeDefinitions",
+            "description": "Retorna a definição do tipo ConsultaCEP.",
             "template": "DataIO.Version6.GetTypeDefinitions",
-            "connectionsReference": "authentication",
-            "relation": "ab6c71e3-57b6-4629-b568-d3da69a7d54b",
+            "connectionsReference": "authentication_cc",
+            "relation": "079e2468-e184-433f-88e0-9c683d308a99",
             "params": {
-                "uri": "https://script.google.com/macros/s/AKfycbxkim2b2zw8Nfpkwt9AZX3NkoEFKpTBi1KNJfiFxp0UvrDYsDViRPPAD8vr_Fnvyc5u/exec?action=connectedFields/getTypeDefinitions"
+                "uri": "https://testeextensionappcep.vercel.app/?action=getTypeDefinitions"
+            }
+        },
+        {
+            "name": "GetTypeNames",
+            "description": "Lista os typeNames suportados.",
+            "template": "DataIO.Version6.GetTypeNames",
+            "connectionsReference": "authentication_cc",
+            "relation": "8def4bce-2b06-4454-9f00-e296f32827e6",
+            "params": {
+                "uri": "https://testeextensionappcep.vercel.app/?action=getTypeNames"
             }
         }
     ],

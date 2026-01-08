@@ -64,11 +64,20 @@ function oauthToken(req, res) {
 }
 
 function getTypeNames(res) {
-  return res.json({ typeNames: ["ConsultaCEP"] });
+  return res.status(200).json({
+    typeNames: [
+      {
+        typeName: "ConsultaCEP",
+        displayName: "Consulta CEP",
+        description: "Consulta CEP via ViaCEP e preenche logradouro"
+      }
+    ]
+  });
 }
 
+
 function getTypeDefinitions(res) {
-  return res.json({
+  return res.status(200).json({
     typeDefinitions: [
       {
         typeName: "ConsultaCEP",
@@ -89,6 +98,7 @@ function getTypeDefinitions(res) {
     ]
   });
 }
+
 
 async function verifyCEP(req, res) {
   const body = parseJsonBody(req);
