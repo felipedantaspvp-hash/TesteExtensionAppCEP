@@ -77,34 +77,71 @@ function getTypeNames(res) {
 
 
 function getTypeDefinitions(req, res) {
-  const declarations = [
-    {
-      declarationType: "map",
-      name: "ConsultaCEP",
-      displayName: "Consulta CEP",
-      description: "Consulta CEP via ViaCEP e preenche logradouro",
-      fields: [
-        {
-          name: "cep",
-          displayName: "CEP",
-          description: "CEP (8 dígitos)",
-          type: { type: "string" },
-          requiredForVerifyingType: true
-        },
-        {
-          name: "logradouro",
-          displayName: "Logradouro",
-          description: "Logradouro retornado pelo ViaCEP",
-          type: { type: "string" }
-        }
-      ]
-    }
-  ];
+  // Aceita tanto ["ConsultaCEP"] quanto [{typeName:"ConsultaCEP"}]
+  const body = parseJsonBody(req);
+  const typeNamesRaw = body?.typeNames || [];
+  const typeNames = typeNamesRaw.map((t) => (typeof t === "string" ? t : t?.typeName)).filter(Boolean);
 
-  return res.status(200).json({ declarations });
+  // Se quiser ser estrito, valide:
+  if (!typeNames.includes("ConsultaCEP")) {
+    return res.json({ declarations: [] });
+  }
+
+  return res.json({
+    declarations: [
+      {
+        $class: "concerto.metamodel@1.0.0.ConceptDeclaration",
+        name: "ConsultaCEP",
+        isAbstract: false,
+        properties: [
+          {
+            $class: "concerto.metamodel@1.0.0.StringProperty",
+            name: "cep",
+            isArray: false,
+            isOptional: false,
+            decorators: [
+              { $class: "concerto.metamodel@1.0.0.Decorator", name: "IsRequiredForVerifyingType" },
+              {
+                $class: "concerto.metamodel@1.0.0.Decorator",
+                name: "Term",
+                arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: "CEP" }]
+              }
+            ],
+            lengthValidator: {
+              $class: "concerto.metamodel@1.0.0.StringLengthValidator",
+              maxLength: 9
+            }
+          },
+          {
+            $class: "concerto.metamodel@1.0.0.StringProperty",
+            name: "logradouro",
+            isArray: false,
+            isOptional: true,
+            decorators: [
+              {
+                $class: "concerto.metamodel@1.0.0.Decorator",
+                name: "Term",
+                arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: "Logradouro" }]
+              }
+            ],
+            lengthValidator: {
+              $class: "concerto.metamodel@1.0.0.StringLengthValidator",
+              maxLength: 256
+            }
+          }
+        ],
+        decorators: [
+          { $class: "concerto.metamodel@1.0.0.Decorator", name: "VerifiableType" },
+          {
+            $class: "concerto.metamodel@1.0.0.Decorator",
+            name: "Term",
+            arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: "Consulta CEP" }]
+          }
+        ]
+      }
+    ]
+  });
 }
-
-
 
 async function verifyCEP(req, res) {
   const body = parseJsonBody(req);
