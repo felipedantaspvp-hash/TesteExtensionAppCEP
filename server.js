@@ -1,10 +1,13 @@
 import express from "express";
 
-const FAKE_ACCESS_TOKEN = "9f3c1c2a-6f7e-4c1d-9b8a-2e5d8a0f6c47";
 const PORT = process.env.PORT || 3000;
 
+// Opcional: mantenha fake para testes.
+// Se quiser, pode sobrescrever via env ACCESS_TOKEN.
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN || "9f3c1c2a-6f7e-4c1d-9b8a-2e5d8a0f6c47";
+
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (_req, res) => {
@@ -18,12 +21,16 @@ app.post("/", async (req, res) => {
     switch (action) {
       case "oauthToken":
         return oauthToken(req, res);
+
       case "getTypeNames":
         return getTypeNames(res);
+
       case "getTypeDefinitions":
         return getTypeDefinitions(req, res);
+
       case "verify":
         return await verifyCEP(req, res);
+
       default:
         return res.status(400).json({
           error: "Unknown action",
@@ -46,8 +53,7 @@ app.listen(PORT, () => {
 });
 
 function oauthToken(req, res) {
-  const params = req.query || {};
-  const grantType = String(params.grant_type || "").trim();
+  const grantType = String(req.query?.grant_type || "").trim();
 
   if (grantType && grantType !== "client_credentials") {
     return res.status(400).json({
@@ -57,7 +63,7 @@ function oauthToken(req, res) {
   }
 
   return res.json({
-    access_token: FAKE_ACCESS_TOKEN,
+    access_token: ACCESS_TOKEN,
     token_type: "Bearer",
     expires_in: 3600
   });
@@ -69,20 +75,19 @@ function getTypeNames(res) {
       {
         typeName: "ConsultaCEP",
         label: "Consulta CEP",
-        description: "Consulta CEP via ViaCEP e preenche logradouro"
+        description: "Consulta CEP via ViaCEP e retorna dados de endereço para autopreenchimento"
       }
     ]
   });
 }
 
-
 function getTypeDefinitions(req, res) {
-  // Aceita tanto ["ConsultaCEP"] quanto [{typeName:"ConsultaCEP"}]
-  const body = parseJsonBody(req);
+  const body = normalizeBody(req);
   const typeNamesRaw = body?.typeNames || [];
-  const typeNames = typeNamesRaw.map((t) => (typeof t === "string" ? t : t?.typeName)).filter(Boolean);
+  const typeNames = typeNamesRaw
+    .map((t) => (typeof t === "string" ? t : t?.typeName))
+    .filter(Boolean);
 
-  // Se quiser ser estrito, valide:
   if (!typeNames.includes("ConsultaCEP")) {
     return res.json({ declarations: [] });
   }
@@ -94,41 +99,21 @@ function getTypeDefinitions(req, res) {
         name: "ConsultaCEP",
         isAbstract: false,
         properties: [
-          {
-            $class: "concerto.metamodel@1.0.0.StringProperty",
-            name: "cep",
-            isArray: false,
-            isOptional: false,
-            decorators: [
-              { $class: "concerto.metamodel@1.0.0.Decorator", name: "IsRequiredForVerifyingType" },
-              {
-                $class: "concerto.metamodel@1.0.0.Decorator",
-                name: "Term",
-                arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: "CEP" }]
-              }
-            ],
-            lengthValidator: {
-              $class: "concerto.metamodel@1.0.0.StringLengthValidator",
-              maxLength: 9
-            }
-          },
-          {
-            $class: "concerto.metamodel@1.0.0.StringProperty",
-            name: "logradouro",
-            isArray: false,
-            isOptional: true,
-            decorators: [
-              {
-                $class: "concerto.metamodel@1.0.0.Decorator",
-                name: "Term",
-                arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: "Logradouro" }]
-              }
-            ],
-            lengthValidator: {
-              $class: "concerto.metamodel@1.0.0.StringLengthValidator",
-              maxLength: 256
-            }
-          }
+          // Input
+          concertoStringProp("cep", "CEP", { requiredForVerifyingType: true, maxLength: 9 }),
+
+          // Retorno ViaCEP (campos úteis para autopreenchimento)
+          concertoStringProp("logradouro", "Logradouro", { maxLength: 256 }),
+          concertoStringProp("complemento", "Complemento", { maxLength: 256 }),
+          concertoStringProp("bairro", "Bairro", { maxLength: 128 }),
+          concertoStringProp("localidade", "Cidade", { maxLength: 128 }),
+          concertoStringProp("uf", "UF", { maxLength: 2 }),
+          concertoStringProp("estado", "Estado", { maxLength: 64 }),
+          concertoStringProp("regiao", "Região", { maxLength: 64 }),
+
+          // Aliases (caso o formulário use nomes diferentes)
+          concertoStringProp("cidade", "Cidade (Alias)", { maxLength: 128 }),
+          concertoStringProp("estadoSigla", "UF (Alias)", { maxLength: 2 })
         ],
         decorators: [
           { $class: "concerto.metamodel@1.0.0.Decorator", name: "VerifiableType" },
@@ -144,7 +129,7 @@ function getTypeDefinitions(req, res) {
 }
 
 async function verifyCEP(req, res) {
-  const body = parseJsonBody(req);
+  const body = normalizeBody(req);
   const data = body?.data || {};
   const cepRaw = String(data.cep || "");
   const cepDigits = cepRaw.replace(/\D/g, "");
@@ -155,12 +140,11 @@ async function verifyCEP(req, res) {
       verifyResponseMessage: "CEP inválido (precisa ter 8 dígitos).",
       verifyFailureReason: "CEP inválido.",
       verificationResultCode: "VALIDATION_ERRORS",
-      suggestions: [{ cep: cepRaw, logradouro: "" }]
+      suggestions: [{ cep: cepRaw }]
     });
   }
 
-  const cepFormatado = `${cepDigits.substring(0, 5)}-${cepDigits.substring(5)}`;
-  const url = `http://viacep.com.br/ws/${cepFormatado}/json/`;
+  const url = `https://viacep.com.br/ws/${cepDigits}/json/`;
 
   try {
     const resp = await fetch(url, {
@@ -174,32 +158,46 @@ async function verifyCEP(req, res) {
         verifyResponseMessage: `Falha ao consultar ViaCEP (HTTP ${resp.status}).`,
         verifyFailureReason: "Falha ao consultar ViaCEP.",
         verificationResultCode: "EXTERNAL_SERVICE_ERROR",
-        suggestions: [{ cep: cepRaw, logradouro: "" }]
+        suggestions: [{ cep: cepRaw }]
       });
     }
 
     const payload = await resp.json();
+
     if (payload?.erro) {
       return res.json({
         verified: false,
         verifyResponseMessage: "CEP não encontrado.",
         verifyFailureReason: "CEP não encontrado.",
         verificationResultCode: "VALIDATION_ERRORS",
-        suggestions: [{ cep: cepRaw, logradouro: "" }]
+        suggestions: [{ cep: cepRaw }]
       });
     }
+
+    const suggestion = {
+      cep: cepRaw,
+      cepFormatado: String(payload.cep || ""),
+
+      logradouro: String(payload.logradouro || ""),
+      complemento: String(payload.complemento || ""),
+      bairro: String(payload.bairro || ""),
+      localidade: String(payload.localidade || ""),
+      uf: String(payload.uf || ""),
+
+      estado: String(payload.estado || ""),
+      regiao: String(payload.regiao || ""),
+
+      // Aliases
+      cidade: String(payload.localidade || ""),
+      estadoSigla: String(payload.uf || "")
+    };
 
     return res.json({
       verified: true,
       verifyResponseMessage: "OK",
       verificationResultCode: "SUCCESS",
       verificationResultDescription: "OK",
-      suggestions: [
-        {
-          cep: cepRaw,
-          logradouro: String(payload.logradouro || "")
-        }
-      ]
+      suggestions: [suggestion]
     });
   } catch (err) {
     return res.status(500).json({
@@ -212,16 +210,50 @@ async function verifyCEP(req, res) {
   }
 }
 
-function parseJsonBody(req) {
-  // Express já parseia JSON e urlencoded; aqui garantimos estrutura semelhante ao Apps Script.
-  if (req.is("application/json")) return req.body;
-  const raw = req.body && typeof req.body === "string" ? req.body : "";
-  if (!raw) return req.body || {};
-  const t = raw.trim();
-  if (!(t.startsWith("{") || t.startsWith("["))) return {};
-  try {
-    return JSON.parse(t);
-  } catch (_err) {
-    return {};
+function normalizeBody(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+
+  if (typeof req.body === "string") {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
   }
+
+  return req.body || {};
+}
+
+/**
+ * Helper para reduzir repetição na declaração do Concerto.
+ */
+function concertoStringProp(name, term, opts = {}) {
+  const decorators = [];
+
+  if (opts.requiredForVerifyingType) {
+    decorators.push({ $class: "concerto.metamodel@1.0.0.Decorator", name: "IsRequiredForVerifyingType" });
+  }
+
+  decorators.push({
+    $class: "concerto.metamodel@1.0.0.Decorator",
+    name: "Term",
+    arguments: [{ $class: "concerto.metamodel@1.0.0.DecoratorString", value: term }]
+  });
+
+  const prop = {
+    $class: "concerto.metamodel@1.0.0.StringProperty",
+    name,
+    isArray: false,
+    isOptional: !opts.requiredForVerifyingType,
+    decorators
+  };
+
+  if (opts.maxLength) {
+    prop.lengthValidator = {
+      $class: "concerto.metamodel@1.0.0.StringLengthValidator",
+      maxLength: opts.maxLength
+    };
+  }
+
+  return prop;
 }
